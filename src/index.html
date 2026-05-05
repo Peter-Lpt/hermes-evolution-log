@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hermes Evolution Log</title>
+</head>
+<body>
+    <h1>Hermes Evolution Log</h1>
+    <p>Loading...</p>
+    <script>
+        fetch('/data/evolution.json')
+            .then(r => r.json())
+            .then(data => {
+                document.body.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            })
+            .catch(err => {
+                document.body.innerHTML = '<p>Error loading evolution data: ' + err.message + '</p>';
+            });
+    </script>
+</body>
+</html>
