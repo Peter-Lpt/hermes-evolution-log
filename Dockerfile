@@ -10,6 +10,6 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY src/index.html /usr/share/nginx/html/index.html
 
 # Copy evolution data (will be overwritten by volume mount at runtime)
-COPY data/evolution.json /usr/share/nginx/html/data/evolution.json
+COPY data/evolution.json /usr/share/nginx/html/evolution.json
 
 EXPOSE 80
