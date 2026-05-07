@@ -90,11 +90,14 @@ def scan_all_skills(skills_dir):
             cat = get_category(root, skills_dir)
             with open(skill_md, 'rb') as f:
                 h = hashlib.md5(f.read()).hexdigest()
+            mtime = datetime.fromtimestamp(os.path.getmtime(skill_md),
+                                           timezone(timedelta(hours=8))).isoformat()
             skills[skill_name] = {
                 "description": desc,
                 "category": cat,
                 "hash": h,
                 "path": os.path.relpath(root, skills_dir),
+                "mtime": mtime,
             }
     return skills
 
@@ -165,6 +168,7 @@ def track(hermes_dir, output_path, snapshot_path):
     now = now_iso()
     events = []
     is_first_run = not prev_skills  # no previous baseline
+    prev_time = prev.get("timestamp", "")
 
     # ── Skill change detection ──
     for name, info in current_skills.items():
@@ -172,10 +176,13 @@ def track(hermes_dir, output_path, snapshot_path):
         if name in prev_skills:
             old = prev_skills[name]
             if old.get("hash") != info["hash"]:
+                ts = info.get("mtime", now)
+                if prev_time and ts <= prev_time:
+                    ts = now  # fallback if mtime is older than last scan
                 events.append({
                     "type": "skill_evolved",
                     "category": info["category"],
-                    "timestamp": now,
+                    "timestamp": ts,
                     "data": {
                         "skill_name": name,
                         "description": info["description"],
@@ -184,10 +191,13 @@ def track(hermes_dir, output_path, snapshot_path):
                 })
         else:
             if not is_first_run:
+                ts = info.get("mtime", now)
+                if prev_time and ts <= prev_time:
+                    ts = now  # fallback
                 events.append({
                     "type": "skill_created",
                     "category": info["category"],
-                    "timestamp": now,
+                    "timestamp": ts,
                     "data": {
                         "skill_name": name,
                         "description": info["description"],
@@ -200,10 +210,12 @@ def track(hermes_dir, output_path, snapshot_path):
     if prev_user_hash:
         # Previous hash exists — compare
         if user_hash and prev_user_hash != user_hash:
+            umtime = datetime.fromtimestamp(os.path.getmtime(user_md),
+                                            timezone(timedelta(hours=8))).isoformat() if os.path.exists(user_md) else now
             events.append({
                 "type": "user_modeling",
                 "category": "用户建模",
-                "timestamp": now,
+                "timestamp": umtime,
                 "data": {"description": "用户画像数据发生变化"},
                 "source": "user",
             })
@@ -214,10 +226,12 @@ def track(hermes_dir, output_path, snapshot_path):
     if prev_memory_hash:
         # Previous hash exists — compare
         if memory_hash and prev_memory_hash != memory_hash:
+            mmtime = datetime.fromtimestamp(os.path.getmtime(memory_md),
+                                            timezone(timedelta(hours=8))).isoformat() if os.path.exists(memory_md) else now
             events.append({
                 "type": "memory_changed",
                 "category": "长期记忆",
-                "timestamp": now,
+                "timestamp": mmtime,
                 "data": {"description": "持久记忆数据发生变化"},
                 "source": "user",
             })
@@ -230,7 +244,7 @@ def track(hermes_dir, output_path, snapshot_path):
         "memory_hash": memory_hash,
         "skills": {
             n: {"hash": i["hash"], "category": i["category"],
-                "description": i["description"]}
+                "description": i["description"], "mtime": i.get("mtime", "")}
             for n, i in current_skills.items()
         },
     }
@@ -289,6 +303,24 @@ def track(hermes_dir, output_path, snapshot_path):
             "last_scan": now,
         },
     }
+
+    # ── Merge with existing events (append new, keep old) ──
+    old_evo = load_json(output_path, {"events": []})
+    old_events = old_evo.get("events", [])
+    # Dedup by (type, name/description, timestamp) to avoid repeats
+    seen = set()
+    for ev in old_events:
+        key = (ev.get("type"), ev.get("data", {}).get("skill_name", ev.get("data", {}).get("description", "")), ev.get("timestamp", "")[:10])
+        seen.add(key)
+    merged = list(old_events)
+    for ev in events:
+        key = (ev.get("type"), ev.get("data", {}).get("skill_name", ev.get("data", {}).get("description", "")), ev.get("timestamp", "")[:10])
+        if key not in seen:
+            merged.append(ev)
+            seen.add(key)
+    merged.sort(key=lambda e: e.get("timestamp", ""))
+    evo["events"] = merged
+    evo["stats"]["total_events"] = len(merged)
 
     save_json(output_path, evo)
 

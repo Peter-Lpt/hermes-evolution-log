@@ -182,19 +182,14 @@ hermes-evolution-log/
 ├── Dockerfile                 # Docker 镜像构建文件
 ├── nginx.conf                 # Nginx 配置
 ├── src/
-│   └── tracker.py             # 核心追踪脚本
-├── frontend/                  # 前端静态文件
-│   ├── index.html             # 仪表盘主页
-│   ├── css/
-│   │   └── style.css          # 暗色主题样式
-│   └── js/
-│       └── app.js             # 前端交互逻辑
+│   ├── tracker.py             # 核心追踪脚本
+│   └── index.html             # 前端仪表盘（纯 HTML/CSS/JS，无依赖）
 ├── data/                      # 运行时数据（git ignore）
 │   ├── evolution.json         # 进化事件记录
 │   └── snapshots/
 │       └── state.json         # 上一次扫描快照
-└── docs/                      # 文档与截图
-    └── screenshot.png         # 界面截图
+└── scripts/
+    └── update.sh              # 升级后更新脚本
 ```
 
 ---
@@ -213,7 +208,8 @@ hermes-evolution-log/
       "data": {
         "skill_name": "web-scraper",
         "description": "自动抓取网页内容并提取结构化数据"
-      }
+      },
+      "source": "user"
     },
     {
       "type": "skill_evolved",
@@ -222,7 +218,8 @@ hermes-evolution-log/
       "data": {
         "skill_name": "reasoning-engine",
         "description": "增强型多步推理能力"
-      }
+      },
+      "source": "user"
     },
     {
       "type": "user_modeling",
@@ -230,7 +227,8 @@ hermes-evolution-log/
       "timestamp": "2026-05-05T19:00:00+08:00",
       "data": {
         "description": "用户画像数据发生变化"
-      }
+      },
+      "source": "user"
     },
     {
       "type": "memory_changed",
@@ -238,7 +236,8 @@ hermes-evolution-log/
       "timestamp": "2026-05-05T19:15:00+08:00",
       "data": {
         "description": "持久记忆数据发生变化"
-      }
+      },
+      "source": "user"
     }
   ],
   "skills_summary": {
@@ -248,7 +247,8 @@ hermes-evolution-log/
           "name": "web-scraper",
           "description": "自动抓取网页内容并提取结构化数据",
           "usage_count": 12,
-          "category": "💻 开发工具"
+          "category": "💻 开发工具",
+          "source": "user"
         }
       ]
     },
@@ -256,10 +256,11 @@ hermes-evolution-log/
   },
   "stats": {
     "total_skills": 48,
+    "user_skills": 5,
+    "system_skills": 43,
     "used_skills": 15,
-    "unused_skills": 33,
-    "total_categories": 12,
     "total_usage": 156,
+    "total_events": 4,
     "last_scan": "2026-05-05T18:00:00+08:00"
   }
 }

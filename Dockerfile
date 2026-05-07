@@ -9,7 +9,8 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 # Copy frontend
 COPY src/index.html /usr/share/nginx/html/index.html
 
-# Copy evolution data (will be overwritten by volume mount at runtime)
-COPY data/evolution.json /usr/share/nginx/html/evolution.json
+# Copy evolution data into data/ subdirectory (matches frontend fetch path)
+RUN mkdir -p /usr/share/nginx/html/data
+COPY data/evolution.json /usr/share/nginx/html/data/evolution.json
 
 EXPOSE 80
