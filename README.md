@@ -279,17 +279,13 @@ hermes-evolution-log/
 
 ## 🖥️ 截图预览
 
-### 进化时间线
+### 首页
 
-![Timeline](docs/screenshot-timeline.png)
+![Homepage](docs/screenshot.png)
 
-### 技能图书馆
+### 技能图谱
 
-![Skill Library](docs/screenshot-skills.png)
-
-### 统计概览
-
-![Stats](docs/screenshot-stats.png)
+![Skills](docs/screenshot-skills.png)
 
 > 💡 截图将在首次发布时更新。欢迎安装后自行截图并提交 PR！
 
