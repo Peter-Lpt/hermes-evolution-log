@@ -30,7 +30,7 @@ if ! command -v python3 &>/dev/null; then
 fi
 echo "  python3: $(python3 --version)"
 
-if ! command -v pip3 &>/dev/null && ! command -v python3 -m pip &>/dev/null; then
+if ! command -v pip3 &>/dev/null && ! python3 -m pip --version &>/dev/null; then
   echo "ERROR: pip3 not found. Please install pip." >&2
   exit 1
 fi

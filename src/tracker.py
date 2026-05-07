@@ -90,8 +90,7 @@ def scan_all_skills(skills_dir):
             cat = get_category(root, skills_dir)
             with open(skill_md, 'rb') as f:
                 h = hashlib.md5(f.read()).hexdigest()
-            mtime = datetime.fromtimestamp(os.path.getmtime(skill_md),
-                                           timezone(timedelta(hours=8))).isoformat()
+            mtime = datetime.fromtimestamp(os.path.getmtime(skill_md)).astimezone().isoformat()
             skills[skill_name] = {
                 "description": desc,
                 "category": cat,
@@ -146,7 +145,8 @@ def save_json(path, data):
 
 
 def now_iso():
-    return datetime.now(timezone(timedelta(hours=8))).isoformat()
+    """Return current time in local timezone"""
+    return datetime.now().astimezone().isoformat()
 
 
 def track(hermes_dir, output_path, snapshot_path):
@@ -210,8 +210,7 @@ def track(hermes_dir, output_path, snapshot_path):
     if prev_user_hash:
         # Previous hash exists — compare
         if user_hash and prev_user_hash != user_hash:
-            umtime = datetime.fromtimestamp(os.path.getmtime(user_md),
-                                            timezone(timedelta(hours=8))).isoformat() if os.path.exists(user_md) else now
+            umtime = datetime.fromtimestamp(os.path.getmtime(user_md)).astimezone().isoformat() if os.path.exists(user_md) else now
             events.append({
                 "type": "user_modeling",
                 "category": "用户建模",
@@ -226,8 +225,7 @@ def track(hermes_dir, output_path, snapshot_path):
     if prev_memory_hash:
         # Previous hash exists — compare
         if memory_hash and prev_memory_hash != memory_hash:
-            mmtime = datetime.fromtimestamp(os.path.getmtime(memory_md),
-                                            timezone(timedelta(hours=8))).isoformat() if os.path.exists(memory_md) else now
+            mmtime = datetime.fromtimestamp(os.path.getmtime(memory_md)).astimezone().isoformat() if os.path.exists(memory_md) else now
             events.append({
                 "type": "memory_changed",
                 "category": "长期记忆",
@@ -335,14 +333,16 @@ def track(hermes_dir, output_path, snapshot_path):
         print("   无变化")
 
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
 def main():
     parser = argparse.ArgumentParser(description="Hermes Agent Evolution Tracker")
     parser.add_argument("--hermes-dir", default=os.environ.get("HERMES_DIR", os.path.expanduser("~/.hermes")),
                         help="Hermes Agent home directory (default: ~/.hermes)")
-    parser.add_argument("--output", default=os.environ.get("EVO_OUTPUT", "/opt/hermes-evolution-log/data/evolution.json"),
-                        help="Output path for evolution.json (default: /opt/hermes-evolution-log/data/evolution.json)")
-    parser.add_argument("--snapshot", default=os.environ.get("EVO_SNAPSHOT", "/opt/hermes-evolution-log/data/snapshots/state.json"),
-                        help="Snapshot path (default: /opt/hermes-evolution-log/data/snapshots/state.json)")
+    parser.add_argument("--output", default=os.environ.get("EVO_OUTPUT", os.path.join(SCRIPT_DIR, "..", "data", "evolution.json")),
+                        help="Output path for evolution.json (default: ../data/evolution.json)")
+    parser.add_argument("--snapshot", default=os.environ.get("EVO_SNAPSHOT", os.path.join(SCRIPT_DIR, "..", "data", "snapshots", "state.json")),
+                        help="Snapshot path (default: ../data/snapshots/state.json)")
     args = parser.parse_args()
 
     track(args.hermes_dir, args.output, args.snapshot)

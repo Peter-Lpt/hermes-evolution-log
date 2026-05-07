@@ -24,11 +24,11 @@ echo
 echo "[1/3] Running tracker to detect changes..."
 cd "$INSTALL_DIR"
 
-if [ -f "$INSTALL_DIR/tracker.py" ]; then
-  HERMES_DIR="$HERMES_DIR" python3 "$INSTALL_DIR/tracker.py"
+if [ -f "$INSTALL_DIR/src/tracker.py" ]; then
+  HERMES_DIR="$HERMES_DIR" python3 "$INSTALL_DIR/src/tracker.py"
   echo "  Tracker complete"
 else
-  echo "  WARNING: tracker.py not found, skipping"
+  echo "  WARNING: src/tracker.py not found, skipping"
 fi
 
 # ── 2. Rebuild Docker image ──────────────────────────────────────────

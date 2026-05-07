@@ -11,6 +11,4 @@ services:
     volumes:
       # Persist evolution data across rebuilds
       - ./data:/usr/share/nginx/html/data
-      # Read-only access to hermes skills directory
-      - ${HERMES_DIR:-$HOME/.hermes/skills}:/hermes/skills:ro
     restart: unless-stopped

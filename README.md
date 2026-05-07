@@ -80,7 +80,7 @@ Hermes Evolution Log 是一个独立的 Web 仪表盘工具，专为 [Hermes Age
 ### 方式一：Docker 部署（推荐）
 
 ```bash
-git clone https://github.com/yourname/hermes-evolution-log.git
+git clone https://github.com/Peter-Lpt/hermes-evolution-log.git
 cd hermes-evolution-log
 
 # 一键启动
@@ -123,7 +123,7 @@ python3 src/tracker.py
 
 ```bash
 # 使用 Python 内置服务器
-cd frontend
+cd src
 python3 -m http.server 9912
 
 # 或使用 Nginx（推荐生产环境）
@@ -319,7 +319,7 @@ hermes-evolution-log/
 
 ```bash
 # 本地开发
-git clone https://github.com/yourname/hermes-evolution-log.git
+git clone https://github.com/Peter-Lpt/hermes-evolution-log.git
 cd hermes-evolution-log
 
 # 运行 tracker
@@ -327,7 +327,7 @@ python3 src/tracker.py --install
 python3 src/tracker.py
 
 # 启动前端开发服务器
-cd frontend && python3 -m http.server 9912
+cd src && python3 -m http.server 9912
 ```
 
 ### 提交规范
@@ -366,7 +366,7 @@ cd frontend && python3 -m http.server 9912
 ```
 MIT License
 
-Copyright (c) 2026 Hermes Evolution Log Contributors
+Copyright (c) 2026 Peter-Lpt
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
