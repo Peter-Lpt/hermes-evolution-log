@@ -98,3 +98,22 @@ echo
 echo "=== Done! ==="
 echo "hermes-log is running at http://localhost:$PORT"
 echo "Data directory: $INSTALL_DIR/data"
+echo
+echo "⚠️  IMPORTANT: Set up scheduled task to keep data updated!"
+echo
+echo "Without a cron job, evolution data will NOT update automatically."
+echo "Please run the following command to edit your crontab:"
+echo
+echo "  crontab -e"
+echo
+echo "Then add this line (adjust path if needed):"
+echo
+echo "  # Daily at 2:00 AM"
+echo "  0 2 * * * cd $INSTALL_DIR && python3 src/tracker.py --output $INSTALL_DIR/data/evolution.json --snapshot $INSTALL_DIR/data/snapshots/state.json"
+echo
+echo "  # Or every 30 minutes (more responsive)"
+echo "  */30 * * * * cd $INSTALL_DIR && python3 src/tracker.py --output $INSTALL_DIR/data/evolution.json --snapshot $INSTALL_DIR/data/snapshots/state.json"
+echo
+echo "Verify with: crontab -l"
+echo
+echo "Or if using Hermes Agent, you can set up a cronjob there instead."

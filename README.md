@@ -111,12 +111,40 @@ python3 src/tracker.py --install
 python3 src/tracker.py
 ```
 
-#### 3. 定时执行（可选）
+#### 3. 设置定时任务（必需）
+
+⚠️ **重要：必须设置定时任务才能持续追踪进化事件！**
+
+进化日志依赖定期扫描来检测变化。如果没有定时任务，数据将不会更新。
+
+**方式一：使用系统 cron（推荐）**
 
 ```bash
-# 每 30 分钟自动扫描一次
-# crontab -e
-*/30 * * * * cd /path/to/hermes-evolution-log && python3 src/tracker.py
+# 编辑 crontab
+crontab -e
+
+# 添加以下行（每天凌晨2点执行，确保数据及时更新）
+0 2 * * * cd /opt/hermes-evolution-log && python3 src/tracker.py --output /opt/hermes-log/data/evolution.json --snapshot /opt/hermes-log/data/snapshots/state.json
+
+# 或者更频繁的扫描（每30分钟）
+*/30 * * * * cd /opt/hermes-evolution-log && python3 src/tracker.py --output /opt/hermes-log/data/evolution.json --snapshot /opt/hermes-evolution-log/data/snapshots/state.json
+```
+
+**方式二：使用 Hermes Agent 的 cronjob（如果在 Hermes 环境中）**
+
+```bash
+# 在 Hermes Agent 中执行
+# 会创建一个定时任务，每天凌晨2点自动运行
+```
+
+**验证定时任务是否生效：**
+
+```bash
+# 查看 crontab 设置
+crontab -l
+
+# 手动运行一次测试
+cd /opt/hermes-evolution-log && python3 src/tracker.py
 ```
 
 #### 4. 启动 Web 服务
