@@ -3,21 +3,23 @@
 # hermes-evolution-log installer
 # Idempotent — safe to run multiple times.
 #
+# 单目录工作流：源文件、构建配置、运行时数据都在同一个目录。
+#
 # Environment variables:
-#   HERMES_DIR   — Path to hermes skills directory (default: ~/.hermes/skills)
-#   INSTALL_DIR  — Installation target (default: /opt/hermes-log)
+#   HERMES_DIR   — Path to hermes skills directory (default: ~/.hermes)
 #   PORT         — Host port to expose (default: 9912)
 
 set -euo pipefail
 
-HERMES_DIR="${HERMES_DIR:-$HOME/.hermes/skills}"
-INSTALL_DIR="${INSTALL_DIR:-/opt/hermes-log}"
-PORT="${PORT:-9912}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+cd "$SCRIPT_DIR"
+
+HERMES_DIR="${HERMES_DIR:-$HOME/.hermes}"
+PORT="${PORT:-9912}"
 
 echo "=== hermes-evolution-log installer ==="
+echo "DIR=$SCRIPT_DIR"
 echo "HERMES_DIR=$HERMES_DIR"
-echo "INSTALL_DIR=$INSTALL_DIR"
 echo "PORT=$PORT"
 echo
 
@@ -42,78 +44,65 @@ if ! command -v docker &>/dev/null; then
 fi
 echo "  docker: $(docker --version)"
 
-if ! command -v docker compose &>/dev/null && ! command -v docker-compose &>/dev/null; then
-  echo "ERROR: docker compose not found." >&2
-  exit 1
-fi
-echo "  docker compose: OK"
-
 # ── 2. Install Python dependencies ────────────────────────────────────
 echo
 echo "[2/5] Installing Python dependencies..."
 pip3 install --user --quiet pyyaml
 echo "  pyyaml: installed"
 
-# ── 3. Create install directory and copy files ────────────────────────
+# ── 3. Generate config files from .example templates ──────────────────
 echo
-echo "[3/5] Setting up $INSTALL_DIR..."
-mkdir -p "$INSTALL_DIR/data" "$INSTALL_DIR/scripts"
+echo "[3/5] Generating config files from templates..."
 
-# Copy project files (skip .git and data snapshots)
-rsync -a --delete \
-  --exclude='.git' \
-  --exclude='data/evolution.json' \
-  --exclude='data/snapshots/' \
-  "$SCRIPT_DIR/" "$INSTALL_DIR/"
-
-echo "  Files copied to $INSTALL_DIR"
+for tpl in Dockerfile docker-compose.yml .env; do
+  example="${tpl}.example"
+  if [ -f "$example" ] && [ ! -f "$tpl" ]; then
+    cp "$example" "$tpl"
+    echo "  $tpl ← copied from $example"
+  elif [ -f "$tpl" ]; then
+    echo "  $tpl — already exists, skipped"
+  fi
+done
 
 # Ensure data directory exists
-mkdir -p "$INSTALL_DIR/data"
+mkdir -p "$SCRIPT_DIR/data"
 
-# ── 4. Export vars for docker-compose and build ───────────────────────
+# ── 4. Build Docker image ─────────────────────────────────────────────
 echo
 echo "[4/5] Building Docker image..."
-cd "$INSTALL_DIR"
-export HERMES_DIR PORT
 
-if docker compose version &>/dev/null 2>&1; then
-  docker compose build
-else
-  docker-compose build
+if [ ! -f "Dockerfile" ]; then
+  echo "ERROR: Dockerfile not found. Copy from Dockerfile.example first." >&2
+  exit 1
 fi
+
+export HERMES_DIR PORT
+docker build -t hermes-log .
 echo "  Build complete"
 
 # ── 5. Start / restart the container ──────────────────────────────────
 echo
 echo "[5/5] Starting hermes-log on port $PORT..."
 
-if docker compose version &>/dev/null 2>&1; then
-  docker compose up -d
-else
-  docker-compose up -d
-fi
+docker rm -f hermes-log 2>/dev/null || true
+docker run -d \
+  --name hermes-log \
+  --restart always \
+  -p "$PORT:80" \
+  -v "$SCRIPT_DIR/data:/usr/share/nginx/html/data" \
+  hermes-log >/dev/null
 
 echo
 echo "=== Done! ==="
 echo "hermes-log is running at http://localhost:$PORT"
-echo "Data directory: $INSTALL_DIR/data"
+echo "Data directory: $SCRIPT_DIR/data"
 echo
 echo "⚠️  IMPORTANT: Set up scheduled task to keep data updated!"
 echo
 echo "Without a cron job, evolution data will NOT update automatically."
-echo "Please run the following command to edit your crontab:"
-echo
-echo "  crontab -e"
-echo
-echo "Then add this line (adjust path if needed):"
+echo "Add to crontab (crontab -e):"
 echo
 echo "  # Daily at 2:00 AM"
-echo "  0 2 * * * cd $INSTALL_DIR && python3 src/tracker.py --output $INSTALL_DIR/data/evolution.json --snapshot $INSTALL_DIR/data/snapshots/state.json"
+echo "  0 2 * * * cd $SCRIPT_DIR && python3 src/tracker.py --output $SCRIPT_DIR/data/evolution.json --snapshot $SCRIPT_DIR/data/snapshots/state.json"
 echo
-echo "  # Or every 30 minutes (more responsive)"
-echo "  */30 * * * * cd $INSTALL_DIR && python3 src/tracker.py --output $INSTALL_DIR/data/evolution.json --snapshot $INSTALL_DIR/data/snapshots/state.json"
-echo
-echo "Verify with: crontab -l"
-echo
-echo "Or if using Hermes Agent, you can set up a cronjob there instead."
+echo "Or use Hermes Agent cronjob instead."

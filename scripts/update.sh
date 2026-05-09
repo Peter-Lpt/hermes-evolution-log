@@ -1,31 +1,30 @@
 #!/usr/bin/env bash
 #
 # hermes-evolution-log updater
-# Runs the tracker, rebuilds the Docker image, and restarts the container.
+# 单目录工作流：运行追踪器 → 构建 Docker → 重启容器
 #
 # Environment variables:
-#   HERMES_DIR   — Path to hermes skills directory (default: ~/.hermes/skills)
-#   INSTALL_DIR  — Installation directory (default: /opt/hermes-log)
-#   PORT         — Host port to expose (default: 9912)
+#   HERMES_DIR — Path to hermes home directory (default: ~/.hermes)
+#   PORT       — Host port to expose (default: 9912)
 
 set -euo pipefail
 
-HERMES_DIR="${HERMES_DIR:-$HOME/.hermes/skills}"
-INSTALL_DIR="${INSTALL_DIR:-/opt/hermes-log}"
+SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$SCRIPT_DIR"
+
+HERMES_DIR="${HERMES_DIR:-$HOME/.hermes}"
 PORT="${PORT:-9912}"
 
 echo "=== hermes-evolution-log updater ==="
-echo "HERMES_DIR=$HERMES_DIR"
-echo "INSTALL_DIR=$INSTALL_DIR"
-echo "PORT=$PORT"
+echo "DIR=$SCRIPT_DIR"
 echo
 
 # ── 1. Run tracker ────────────────────────────────────────────────────
 echo "[1/3] Running tracker to detect changes..."
-cd "$INSTALL_DIR"
-
-if [ -f "$INSTALL_DIR/src/tracker.py" ]; then
-  HERMES_DIR="$HERMES_DIR" python3 "$INSTALL_DIR/src/tracker.py"
+if [ -f "$SCRIPT_DIR/src/tracker.py" ]; then
+  python3 "$SCRIPT_DIR/src/tracker.py" \
+    --output "$SCRIPT_DIR/data/evolution.json" \
+    --snapshot "$SCRIPT_DIR/data/snapshots/state.json"
   echo "  Tracker complete"
 else
   echo "  WARNING: src/tracker.py not found, skipping"
@@ -35,22 +34,19 @@ fi
 echo
 echo "[2/3] Rebuilding Docker image..."
 export HERMES_DIR PORT
-
-if docker compose version &>/dev/null 2>&1; then
-  docker compose build --no-cache
-else
-  docker-compose build --no-cache
-fi
+docker build --no-cache -t hermes-log .
 echo "  Build complete"
 
 # ── 3. Restart container ─────────────────────────────────────────────
 echo
 echo "[3/3] Restarting container..."
-if docker compose version &>/dev/null 2>&1; then
-  docker compose up -d
-else
-  docker-compose up -d
-fi
+docker rm -f hermes-log 2>/dev/null || true
+docker run -d \
+  --name hermes-log \
+  --restart always \
+  -p "$PORT:80" \
+  -v "$SCRIPT_DIR/data:/usr/share/nginx/html/data" \
+  hermes-log >/dev/null
 
 echo
 echo "=== Update complete! ==="

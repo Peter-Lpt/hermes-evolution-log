@@ -1,0 +1,14 @@
+version: "3.8"
+
+services:
+  hermes-log:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: hermes-log
+    ports:
+      - "${PORT:-9912}:80"
+    volumes:
+      # Persist evolution data across rebuilds
+      - ./data:/usr/share/nginx/html/data
+    restart: unless-stopped
