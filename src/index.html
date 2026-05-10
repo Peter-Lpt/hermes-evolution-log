@@ -474,7 +474,7 @@
         }
         function isThisWeek(d) {
             const now = new Date(); const t = new Date(d);
-            const start = new Date(now); start.setDate(now.getDate() - now.getDay()); start.setHours(0,0,0,0);
+            const start = new Date(now); start.setDate(now.getDate() - ((now.getDay() + 6) % 7)); start.setHours(0,0,0,0);
             return t >= start;
         }
         function isThisMonth(d) {
